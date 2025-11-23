@@ -1,0 +1,9 @@
+{
+  "name": "asistal-scraper",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "axios": "latest",
+    "cheerio": "latest"
+  }
+}
