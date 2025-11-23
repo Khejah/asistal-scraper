@@ -1,64 +1,55 @@
-import axios from "axios";
-import * as cheerio from "cheerio";
+import chromium from "@sparticuz/chromium";
+import puppeteer from "puppeteer-core";
 
 export default async function handler(req, res) {
   try {
-    const URL = "https://asistal.com/tr/tum-kataloglar";
-    const html = (await axios.get(URL)).data;
-    const $ = cheerio.load(html);
+    const url = "https://asistal.com/tr/tum-kataloglar";
 
-    const result = {};
-
-    $(".viewer-box").each((i, box) => {
-      // başlık → "TM55 Katalog"
-      const rawTitle = $(box).find(".title").text().trim();
-
-      if (!rawTitle) return;
-
-      // sistem kodu → TM55
-      const code = rawTitle.split(" ")[0].toUpperCase();
-
-      if (!result[code]) {
-        result[code] = {
-          katalog: null,
-          montaj: null,
-          test: null
-        };
-      }
-
-      // Kart içindeki tüm PDF linkleri
-      $(box)
-        .find("a[href$='.pdf']")
-        .each((i2, link) => {
-          const href = $(link).attr("href");
-          if (!href) return;
-
-          const fullUrl = "https://asistal.com" + href;
-          const type = detectPdfType(fullUrl);
-
-          if (type === "katalog" && !result[code].katalog)
-            result[code].katalog = fullUrl;
-
-          if (type === "montaj" && !result[code].montaj)
-            result[code].montaj = fullUrl;
-
-          if (type === "test" && !result[code].test)
-            result[code].test = fullUrl;
-        });
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
-    res.status(200).json(result);
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: "networkidle0" });
+
+    // viewer-box elemanları DOM'a yüklenene kadar bekle
+    await page.waitForSelector(".viewer-box");
+
+    const data = await page.evaluate(() => {
+      const items = document.querySelectorAll(".viewer-box");
+      const result = {};
+
+      items.forEach((box) => {
+        const titleEl = box.querySelector(".title");
+        if (!titleEl) return;
+
+        const rawTitle = titleEl.innerText.trim();
+        const code = rawTitle.split(" ")[0].toUpperCase();
+
+        if (!result[code]) {
+          result[code] = { katalog: null, montaj: null, test: null };
+        }
+
+        const links = box.querySelectorAll("a[href$='.pdf']");
+        links.forEach((a) => {
+          const url = "https://asistal.com" + a.getAttribute("href");
+          const name = url.toLowerCase();
+
+          if (name.includes("montaj")) result[code].montaj = url;
+          else if (name.includes("test")) result[code].test = url;
+          else result[code].katalog = url;
+        });
+      });
+
+      return result;
+    });
+
+    await browser.close();
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.toString() });
   }
-}
-
-// PDF türü tespit
-function detectPdfType(url) {
-  const name = url.toLowerCase();
-
-  if (name.includes("montaj")) return "montaj";
-  if (name.includes("test")) return "test";
-
-  return "katalog";
 }
