@@ -5,35 +5,36 @@ export default async function handler(req, res) {
   try {
     const URL = "https://asistal.com/tr/tum-kataloglar";
     const html = (await axios.get(URL)).data;
-
     const $ = cheerio.load(html);
 
     const result = {};
 
-    // Tüm kartları dolaş
-    $(".catalog").each((i, card) => {
-      const title = $(card).find("h3").text().trim(); 
-      if (!title) return;
+    $(".viewer-box").each((i, box) => {
+      // başlık → "TM55 Katalog"
+      const rawTitle = $(box).find(".title").text().trim();
 
-      // Başlık: “TH78 - THS78 Katalog”
-      const code = title.split(" ")[0].toUpperCase();
+      if (!rawTitle) return;
 
-      result[code] = {
-        katalog: null,
-        montaj: null,
-        test: null,
-      };
+      // sistem kodu → TM55
+      const code = rawTitle.split(" ")[0].toUpperCase();
 
-      // Kartın içindeki tüm PDF linkleri
-      $(card)
-        .find("a")
+      if (!result[code]) {
+        result[code] = {
+          katalog: null,
+          montaj: null,
+          test: null
+        };
+      }
+
+      // Kart içindeki tüm PDF linkleri
+      $(box)
+        .find("a[href$='.pdf']")
         .each((i2, link) => {
           const href = $(link).attr("href");
-          if (!href || !href.endsWith(".pdf")) return;
+          if (!href) return;
 
           const fullUrl = "https://asistal.com" + href;
-
-          const type = detectType(fullUrl);
+          const type = detectPdfType(fullUrl);
 
           if (type === "katalog" && !result[code].katalog)
             result[code].katalog = fullUrl;
@@ -52,8 +53,8 @@ export default async function handler(req, res) {
   }
 }
 
-// PDF türü bulucu
-function detectType(url) {
+// PDF türü tespit
+function detectPdfType(url) {
   const name = url.toLowerCase();
 
   if (name.includes("montaj")) return "montaj";
