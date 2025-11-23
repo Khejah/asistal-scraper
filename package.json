@@ -4,6 +4,8 @@
   "type": "module",
   "dependencies": {
     "axios": "latest",
-    "cheerio": "latest"
+    "cheerio": "latest",
+    "@sparticuz/chromium": "latest",
+    "puppeteer-core": "latest"
   }
 }
