@@ -15,14 +15,15 @@ export default async function handler(req, res) {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle0" });
 
-    // viewer-box elemanları DOM'a yüklenene kadar bekle
     await page.waitForSelector(".viewer-box");
 
     const data = await page.evaluate(() => {
-      const items = document.querySelectorAll(".viewer-box");
       const result = {};
+      const items = document.querySelectorAll(".viewer-box");
 
       items.forEach((box) => {
+        const isLink = box.tagName.toLowerCase() === "a";
+
         const titleEl = box.querySelector(".title");
         if (!titleEl) return;
 
@@ -33,16 +34,26 @@ export default async function handler(req, res) {
           result[code] = { katalog: null, montaj: null, test: null };
         }
 
-        const links = box.querySelectorAll("a[href$='.pdf']");
-        links.forEach((a) => {
-          const url = "https://asistal.com" + a.getAttribute("href");
-          const name = url.toLowerCase();
-
-          if (name.includes("montaj")) result[code].montaj = url;
-          else if (name.includes("test")) result[code].test = url;
-          else result[code].katalog = url;
-        });
+        // Eğer box <a> ise PDF linki direkt href'tedir
+        if (isLink) {
+          const url = "https://asistal.com" + box.getAttribute("href");
+          assignType(result[code], url);
+        } else {
+          // Eski tip kart: <div> içinde <a>
+          const links = box.querySelectorAll("a[href$='.pdf']");
+          links.forEach((a) => {
+            const url = "https://asistal.com" + a.getAttribute("href");
+            assignType(result[code], url);
+          });
+        }
       });
+
+      function assignType(obj, url) {
+        const name = url.toLowerCase();
+        if (name.includes("montaj")) obj.montaj = url;
+        else if (name.includes("test")) obj.test = url;
+        else obj.katalog = url;
+      }
 
       return result;
     });
