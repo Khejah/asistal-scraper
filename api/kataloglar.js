@@ -34,7 +34,19 @@ export default async function handler(req, res) {
           result[code] = { katalog: null, montaj: null, test: null, kesim: null };
         }
 
-        // Eğer box <a> ise PDF linki direkt href'tedir
+        function assignType(obj, url) {
+          const name = url.toLowerCase();
+
+          // ❌ "m-v1.pdf" katalog değildir → kesim dosyasıdır
+          if (name.includes("-m-v1.pdf")) {
+            return;
+          }
+
+          if (name.includes("montaj")) obj.montaj = url;
+          else if (name.includes("test")) obj.test = url;
+          else obj.katalog = url;
+        }
+
         if (isLink) {
           const url = "https://asistal.com" + box.getAttribute("href");
           assignType(result[code], url);
@@ -47,27 +59,14 @@ export default async function handler(req, res) {
         }
       });
 
-      function assignType(obj, url) {
-        const name = url.toLowerCase();
-        if (name.includes("montaj")) obj.montaj = url;
-        else if (name.includes("test")) obj.test = url;
-        else obj.katalog = url;
-      }
-
       return result;
     });
 
-    // ⭐⭐⭐ --- BURASI EKLENEN YENİ BÖLÜM ---
-    // P55 kesim tablosu otomatik ekleniyor
-    if (data["P55"]?.katalog) {
-      const normal = data["P55"].katalog;
-
-      // eğer zaten kesim yoksa otomatik üret
-      if (!data["P55"].kesim) {
-        data["P55"].kesim = normal.replace("-v1.pdf", "-m-v1.pdf");
-      }
+    // ⭐ Doğru P55 katalog & kesim tablosu atama
+    if (data["P55"]) {
+      data["P55"].katalog = "https://www.asistal.com/storage/products/media/1977/p55-2024-v1.pdf";
+      data["P55"].kesim   = "https://www.asistal.com/storage/products/media/1984/p55-2024-m-v1.pdf";
     }
-    // ⭐⭐⭐ --- BİTİŞ ---
 
     await browser.close();
     res.status(200).json(data);
