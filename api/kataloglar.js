@@ -35,17 +35,29 @@ export default async function handler(req, res) {
         }
 
         function assignType(obj, url) {
-          const name = url.toLowerCase();
+  const name = url.toLowerCase();
 
-          // ❌ "m-v1.pdf" katalog değildir → kesim dosyasıdır
-          if (name.includes("-m-v1.pdf")) {
-            return;
-          }
+  // ❌ Kesim dosyaları özel "m-v1" → atla
+  if (name.includes("-m-v1.pdf")) {
+    obj.kesim = url;
+    return;
+  }
 
-          if (name.includes("montaj")) obj.montaj = url;
-          else if (name.includes("test")) obj.test = url;
-          else obj.katalog = url;
-        }
+  // ✔️ Montaj tespiti (iki ihtimal)
+  if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) {
+    obj.montaj = url;
+    return;
+  }
+
+  // ✔️ Test dosyası
+  if (name.includes("test")) {
+    obj.test = url;
+    return;
+  }
+
+  // ✔️ Geri kalan her şey katalog
+  obj.katalog = url;
+}
 
         if (isLink) {
           const url = "https://asistal.com" + box.getAttribute("href");
