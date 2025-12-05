@@ -81,7 +81,13 @@ export default async function handler(req, res) {
       finalData["katalog058"].kesim =
         "https://www.asistal.com/storage/products/media/1984/p55-2024-m-v1.pdf";
     }
-
+// --- TH62 özel düzeltmesi ---
+for (const id in finalData) {
+  if (finalData[id].title === "TH62") {
+    finalData[id].katalog =
+      "https://www.asistal.com/storage/products/media/4148/th62-ths62-2025-v3.pdf";
+  }
+}
     res.status(200).json(finalData);
 
   } catch (err) {
