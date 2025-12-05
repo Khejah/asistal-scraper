@@ -1,13 +1,15 @@
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
-import fetch from "node-fetch";
 
 export default async function handler(req, res) {
   try {
+    // ⭐ Vercel için garantili fetch
+    const fetch = (...args) =>
+      import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
     const url = "https://asistal.com/tr/tum-kataloglar";
 
-    // --- 1) ID MAP JSON'u GitHub REPO ROOT'TAN OKU ---
-   const idMapUrl = "https://raw.githubusercontent.com/Khejah/asistal-scraper/main/id_map.json";
+    const idMapUrl = "https://raw.githubusercontent.com/Khejah/asistal-scraper/main/id_map.json";
     const idMap = await fetch(idMapUrl).then(r => r.json());
 
     const browser = await puppeteer.launch({
