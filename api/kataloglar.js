@@ -3,12 +3,9 @@ import puppeteer from "puppeteer-core";
 
 export default async function handler(req, res) {
   try {
-    // ⭐ Vercel için garantili fetch
-    const fetch = (...args) =>
-      import("node-fetch").then(({ default: fetch }) => fetch(...args));
-
     const url = "https://asistal.com/tr/tum-kataloglar";
 
+    // ID MAP JSON GITHUB ROOT
     const idMapUrl = "https://raw.githubusercontent.com/Khejah/asistal-scraper/main/id_map.json";
     const idMap = await fetch(idMapUrl).then(r => r.json());
 
@@ -21,10 +18,8 @@ export default async function handler(req, res) {
 
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle0" });
-
     await page.waitForSelector(".viewer-box");
 
-    // --- 2) Asistal sayfasından PDF linklerini çek ---
     const rawData = await page.evaluate(() => {
       const result = {};
       const items = document.querySelectorAll(".viewer-box");
@@ -39,43 +34,22 @@ export default async function handler(req, res) {
         const code = rawTitle.split(" ")[0].toUpperCase();
 
         if (!result[code]) {
-          result[code] = {
-            katalog: null,
-            montaj: null,
-            test: null,
-            kesim: null,
-          };
+          result[code] = { katalog: null, montaj: null, test: null, kesim: null };
         }
 
         function assignType(obj, url) {
           const name = url.toLowerCase();
-
-          if (name.includes("-m-v1.pdf")) {
-            obj.kesim = url;
-            return;
-          }
-
-          if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) {
-            obj.montaj = url;
-            return;
-          }
-
-          if (name.includes("test")) {
-            obj.test = url;
-            return;
-          }
-
+          if (name.includes("-m-v1.pdf")) { obj.kesim = url; return; }
+          if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) { obj.montaj = url; return; }
+          if (name.includes("test")) { obj.test = url; return; }
           obj.katalog = url;
         }
 
         if (isLink) {
-          const url = "https://asistal.com" + box.getAttribute("href");
-          assignType(result[code], url);
+          assignType(result[code], "https://asistal.com" + box.getAttribute("href"));
         } else {
-          const links = box.querySelectorAll("a[href$='.pdf']");
-          links.forEach((a) => {
-            const url = "https://asistal.com" + a.getAttribute("href");
-            assignType(result[code], url);
+          box.querySelectorAll("a[href$='.pdf']").forEach(a => {
+            assignType(result[code], "https://asistal.com" + a.getAttribute("href"));
           });
         }
       });
@@ -85,19 +59,14 @@ export default async function handler(req, res) {
 
     await browser.close();
 
-    // --- 3) ID MAP'e göre çıktıyı ID → içerik olarak düzenle ---
     const finalData = {};
 
     for (const code of Object.keys(rawData)) {
-      if (!idMap[code]) {
-        // ID MAP'te yoksa bu katalog atlanır (sabit sistem bozulmasın diye)
-        continue;
-      }
+      if (!idMap[code]) continue;
 
       const id = idMap[code];
-
       finalData[id] = {
-        id: id,
+        id,
         title: code,
         katalog: rawData[code].katalog,
         montaj: rawData[code].montaj,
@@ -106,14 +75,11 @@ export default async function handler(req, res) {
       };
     }
 
-    // --- 4) P55 özel düzeltmesi ---
-    for (const id in finalData) {
-      if (finalData[id].title === "P55") {
-        finalData[id].katalog =
-          "https://www.asistal.com/storage/products/media/1977/p55-2024-v1.pdf";
-        finalData[id].kesim =
-          "https://www.asistal.com/storage/products/media/1984/p55-2024-m-v1.pdf";
-      }
+    if (finalData["katalog058"]) {
+      finalData["katalog058"].katalog =
+        "https://www.asistal.com/storage/products/media/1977/p55-2024-v1.pdf";
+      finalData["katalog058"].kesim =
+        "https://www.asistal.com/storage/products/media/1984/p55-2024-m-v1.pdf";
     }
 
     res.status(200).json(finalData);
