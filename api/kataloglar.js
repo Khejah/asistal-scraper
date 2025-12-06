@@ -21,78 +21,97 @@ export default async function handler(req, res) {
     await page.waitForSelector(".viewer-box");
 
     const rawData = await page.evaluate(() => {
-  const result = {};
-  const items = document.querySelectorAll(".viewer-box");
+      const result = {};
+      const items = document.querySelectorAll(".viewer-box");
 
-  items.forEach((box) => {
-    try {
-      const titleEl = box.querySelector(".title");
-      if (!titleEl) return;
+      items.forEach((box) => {
+        try {
+          const titleEl = box.querySelector(".title");
+          if (!titleEl) return;
 
-      let rawTitle = titleEl.innerText.trim();
+          let rawTitle = titleEl.innerText.trim();
 
-      // Normalize title
-      rawTitle = rawTitle
-        .normalize("NFKD")
-        .replace(/[^\w\s]/g, "")   // remove special chars
-        .replace(/\s+/g, " ")      // collapse spaces
-        .trim();
+          // Normalize title (unicode temizliği)
+          rawTitle = rawTitle
+            .normalize("NFKD")
+            .replace(/[^\w\s]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
 
-      const parts = rawTitle.split(/\s+/);
-      let code = "";
+          const parts = rawTitle.split(/\s+/);
+          let code = "";
 
-      // 1) HARF GRUBU (TM, SL, TH...)
-      if (parts[0] && /^[A-Za-z]+$/.test(parts[0])) {
-        code += parts[0].toUpperCase();
-      }
+          // 1) HARF GRUBU (SL, TH, AS, AB, TM...)
+          if (parts[0] && /^[A-Za-z]+$/.test(parts[0])) {
+            code += parts[0].toUpperCase();
+          }
 
-      // 2) SAYI GRUBU (55, 38, 62...)
-      if (parts[1] && /^[0-9]+$/.test(parts[1])) {
-        code += parts[1];
-      }
+          // 2) SAYI GRUBU (38, 62, 55, 130...)
+          if (parts[1] && /^[0-9]+$/.test(parts[1])) {
+            code += parts[1];
+          }
 
-      // 3) EK HARF (T, HV, K...)
-      if (parts[2] && /^[A-Za-z]+$/.test(parts[2])) {
-        code += parts[2].toUpperCase();
-      }
+          // 3) EK HARF (T, HV, K...)
+          if (parts[2] && /^[A-Za-z]+$/.test(parts[2])) {
+            code += parts[2].toUpperCase();
+          }
 
-      if (!code) return;
+          if (!code) return;
 
-      if (!result[code]) {
-        result[code] = {
-          katalog: null,
-          montaj: null,
-          test: null,
-          kesim: null,
-        };
-      }
+          if (!result[code]) {
+            result[code] = {
+              katalog: null,
+              montaj: null,
+              test: null,
+              kesim: null,
+            };
+          }
 
-      function assignType(obj, url) {
-        const name = url.toLowerCase();
-        if (name.includes("-m-v1.pdf")) { obj.kesim = url; return; }
-        if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) {
-          obj.montaj = url; return;
+          function assignType(obj, url) {
+            const name = url.toLowerCase();
+
+            if (name.includes("-m-v1.pdf")) {
+              obj.kesim = url;
+              return;
+            }
+
+            if (
+              name.includes("montaj") ||
+              name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)
+            ) {
+              obj.montaj = url;
+              return;
+            }
+
+            if (name.includes("test")) {
+              obj.test = url;
+              return;
+            }
+
+            obj.katalog = url;
+          }
+
+          // PDF linklerini çek
+          box.querySelectorAll("a[href$='.pdf']").forEach((a) => {
+            assignType(
+              result[code],
+              "https://asistal.com" + a.getAttribute("href")
+            );
+          });
+
+        } catch (e) {
+          console.error("evaluate error:", e);
         }
-        if (name.includes("test")) { obj.test = url; return; }
-        obj.katalog = url;
-      }
-
-      box.querySelectorAll("a[href$='.pdf']").forEach((a) => {
-        assignType(result[code], "https://asistal.com" + a.getAttribute("href"));
       });
 
-    } catch (e) {
-      console.error("evaluate içinde hata:", e);
-    }
-  });
-
-  return result;
-});
+      return result;
+    });
 
     await browser.close();
 
     const finalData = {};
 
+    // ID MAP eşleştirme
     for (const code of Object.keys(rawData)) {
       if (!idMap[code]) continue;
 
@@ -107,7 +126,7 @@ export default async function handler(req, res) {
       };
     }
 
-    // --- P55 (katalog058) özel düzeltmesi ---
+    // ÖZEL DÜZELTMELER
     if (finalData["katalog058"]) {
       finalData["katalog058"].katalog =
         "https://www.asistal.com/storage/products/media/1977/p55-2024-v1.pdf";
@@ -115,7 +134,6 @@ export default async function handler(req, res) {
         "https://www.asistal.com/storage/products/media/1984/p55-2024-m-v1.pdf";
     }
 
-    // --- TH62 özel düzeltmesi (varsa) ---
     for (const id in finalData) {
       if (finalData[id].title === "TH62") {
         finalData[id].katalog =
@@ -123,7 +141,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // --- katalog089 özel düzeltmesi (GENEL broşür) ---
     if (finalData["katalog089"]) {
       finalData["katalog089"].katalog =
         "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
