@@ -30,8 +30,20 @@ export default async function handler(req, res) {
         const titleEl = box.querySelector(".title");
         if (!titleEl) return;
 
-        const rawTitle = titleEl.innerText.trim();
-        const code = rawTitle.replace(/[\s-]+/g, "").toUpperCase();
+        let rawTitle = titleEl.innerText.trim();
+
+        // Unicode tireleri normalize et
+        rawTitle = rawTitle.replace(/[\u2010-\u2015]/g, "-");
+
+        // Harf-rakam-tire-boşluk dışındaki karakterleri temizle
+        rawTitle = rawTitle.replace(/[^\w\- ]+/g, "");
+
+        // İlk 3 kelimeyi alıp birleştir → çoğu katalog için yeterli
+        const code = rawTitle
+          .split(/\s+/)
+          .slice(0, 3)
+          .join("")
+          .toUpperCase();
 
         if (!result[code]) {
           result[code] = { katalog: null, montaj: null, test: null, kesim: null };
