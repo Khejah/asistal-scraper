@@ -106,7 +106,7 @@ export default async function handler(req, res) {
         .replace(/\s+/g, "")
         .toUpperCase();
 
-      if (normalized === "TH62HV") {
+      if (normalized === "TH62 HV") {
         finalData["katalog092"] = finalData[id];
       }
     }
