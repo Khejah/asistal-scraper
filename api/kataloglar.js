@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         if (!titleEl) return;
 
         const rawTitle = titleEl.innerText.trim();
-        const code = rawTitle.split(" ")[0].toUpperCase();
+        const code = rawTitle.replace(/[\s-]+/g, "").toUpperCase();
 
         if (!result[code]) {
           result[code] = { katalog: null, montaj: null, test: null, kesim: null };
