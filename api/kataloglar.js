@@ -52,6 +52,15 @@ export default async function handler(req, res) {
             const pdfUrl = "https://asistal.com" + a.getAttribute("href");
             const lower = pdfUrl.toLowerCase();
 
+            // FC50N tespiti → URL içinde her zaman “fc50n” geçer
+            if (lower.includes("fc50n")) {
+              if (!result["FC50N"]) {
+                result["FC50N"] = { katalog: null, montaj: null, test: null, kesim: null };
+              }
+              assignType(result["FC50N"], pdfUrl);
+              return;
+            }
+
             // FC50-SKY tespiti → URL içinde her zaman “fc50-sky” geçer
             if (lower.includes("fc50-sky")) {
               if (!result["FC50SKY"]) {
