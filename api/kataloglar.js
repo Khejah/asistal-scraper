@@ -88,6 +88,12 @@ for (const id in finalData) {
       "https://www.asistal.com/storage/products/media/4148/th62-ths62-2025-v3.pdf";
   }
 }
+// --- katalog089 özel düzeltmesi ---
+if (finalData["katalog089"]) {
+  finalData["katalog089"].katalog =
+    "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
+}
+
     res.status(200).json(finalData);
 
   } catch (err) {
