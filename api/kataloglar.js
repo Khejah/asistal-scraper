@@ -83,13 +83,8 @@ export default async function handler(req, res) {
     }
 
     // --- TH62 özel düzeltmesi ---
-    for (const id in finalData) {
-      if (finalData[id].title === "TH62") {
-        finalData[id].katalog =
-          "https://www.asistal.com/storage/products/media/4148/th62-ths62-2025-v3.pdf";
-      }
-    }
-
+    for (const id in finalData) 
+      
     // --- katalog089 özel düzeltmesi ---
     if (finalData["katalog089"]) {
       finalData["katalog089"].katalog =
