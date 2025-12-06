@@ -127,6 +127,12 @@ export default async function handler(req, res) {
       finalData["katalog089"].katalog =
         "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
     }
+    
+    // --- FC50 katalog override ---
+    if (finalData["katalog035"]) {
+      finalData["katalog035"].katalog =
+        "https://asistal.com/storage/products/media/4120/fc50n-2025-v2.pdf";
+    }
 
     // --- TH62HV otomatik eşleştirme (CRASH-SAFE SÜRÜM) ---
     for (const id in finalData) {
