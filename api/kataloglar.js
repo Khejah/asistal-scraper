@@ -21,76 +21,73 @@ export default async function handler(req, res) {
     await page.waitForSelector(".viewer-box");
 
     const rawData = await page.evaluate(() => {
-      const result = {};
-      const items = document.querySelectorAll(".viewer-box");
+  const result = {};
+  const items = document.querySelectorAll(".viewer-box");
 
-      items.forEach((box) => {
-        try {
-          const isLink = box.tagName.toLowerCase() === "a";
+  items.forEach((box) => {
+    try {
+      const titleEl = box.querySelector(".title");
+      if (!titleEl) return;
 
-          const titleEl = box.querySelector(".title");
-          if (!titleEl) return;
+      let rawTitle = titleEl.innerText.trim();
 
-          let rawTitle = titleEl.innerText.trim();
+      // Normalize title
+      rawTitle = rawTitle
+        .normalize("NFKD")
+        .replace(/[^\w\s]/g, "")   // remove special chars
+        .replace(/\s+/g, " ")      // collapse spaces
+        .trim();
 
-          // Tüm gizli unicode karakterleri normalize et
-          rawTitle = rawTitle
-            .normalize("NFKD")
-            .replace(/[^\w\s-]/g, "") // harf-rakam-boşluk-tire dışını temizle
-            .replace(/\s+/g, " ") // fazla boşlukları teke indir
-            .trim();
+      const parts = rawTitle.split(/\s+/);
+      let code = "";
 
-          const parts = rawTitle.split(" ");
-          const code = (parts[0] + (parts[1] || "")).toUpperCase();
+      // 1) HARF GRUBU (TM, SL, TH...)
+      if (parts[0] && /^[A-Za-z]+$/.test(parts[0])) {
+        code += parts[0].toUpperCase();
+      }
 
-          if (!code) return;
+      // 2) SAYI GRUBU (55, 38, 62...)
+      if (parts[1] && /^[0-9]+$/.test(parts[1])) {
+        code += parts[1];
+      }
 
-          if (!result[code]) {
-            result[code] = {
-              katalog: null,
-              montaj: null,
-              test: null,
-              kesim: null,
-            };
-          }
+      // 3) EK HARF (T, HV, K...)
+      if (parts[2] && /^[A-Za-z]+$/.test(parts[2])) {
+        code += parts[2].toUpperCase();
+      }
 
-          function assignType(obj, url) {
-            const name = url.toLowerCase();
-            if (name.includes("-m-v1.pdf")) {
-              obj.kesim = url;
-              return;
-            }
-            if (
-              name.includes("montaj") ||
-              name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)
-            ) {
-              obj.montaj = url;
-              return;
-            }
-            if (name.includes("test")) {
-              obj.test = url;
-              return;
-            }
-            obj.katalog = url;
-          }
+      if (!code) return;
 
-          if (isLink) {
-            assignType(result[code], "https://asistal.com" + box.getAttribute("href"));
-          } else {
-            box.querySelectorAll("a[href$='.pdf']").forEach((a) => {
-              assignType(
-                result[code],
-                "https://asistal.com" + a.getAttribute("href")
-              );
-            });
-          }
-        } catch (e) {
-          console.error("evaluate içinde hata:", e);
+      if (!result[code]) {
+        result[code] = {
+          katalog: null,
+          montaj: null,
+          test: null,
+          kesim: null,
+        };
+      }
+
+      function assignType(obj, url) {
+        const name = url.toLowerCase();
+        if (name.includes("-m-v1.pdf")) { obj.kesim = url; return; }
+        if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) {
+          obj.montaj = url; return;
         }
+        if (name.includes("test")) { obj.test = url; return; }
+        obj.katalog = url;
+      }
+
+      box.querySelectorAll("a[href$='.pdf']").forEach((a) => {
+        assignType(result[code], "https://asistal.com" + a.getAttribute("href"));
       });
 
-      return result;
-    });
+    } catch (e) {
+      console.error("evaluate içinde hata:", e);
+    }
+  });
+
+  return result;
+});
 
     await browser.close();
 
