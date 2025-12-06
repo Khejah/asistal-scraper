@@ -49,7 +49,19 @@ export default async function handler(req, res) {
           assignType(result[code], "https://asistal.com" + box.getAttribute("href"));
         } else {
           box.querySelectorAll("a[href$='.pdf']").forEach(a => {
-            assignType(result[code], "https://asistal.com" + a.getAttribute("href"));
+            const pdfUrl = "https://asistal.com" + a.getAttribute("href");
+            const lower = pdfUrl.toLowerCase();
+            // TH62HV tespiti → URL içinde her zaman “th62-hv” geçer
+            if (lower.includes("th62-hv")) {
+              if (!result["TH62HV"]) {
+                result["TH62HV"] = { katalog: null, montaj: null, test: null, kesim: null };
+              }
+              assignType(result["TH62HV"], pdfUrl);
+              return; // artık TH62 olarak işleme!
+            }
+
+            // Normal işleme
+            assignType(result[code], pdfUrl);
           });
         }
       });
