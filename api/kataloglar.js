@@ -21,53 +21,58 @@ export default async function handler(req, res) {
     await page.waitForSelector(".viewer-box");
 
     const rawData = await page.evaluate(() => {
-      const result = {};
-      const items = document.querySelectorAll(".viewer-box");
+  const result = {};
+  const items = document.querySelectorAll(".viewer-box");
 
-      items.forEach((box) => {
-        const isLink = box.tagName.toLowerCase() === "a";
+  items.forEach((box) => {
+    try {
+      const isLink = box.tagName.toLowerCase() === "a";
 
-        const titleEl = box.querySelector(".title");
-        if (!titleEl) return;
+      const titleEl = box.querySelector(".title");
+      if (!titleEl) return;
 
-        let rawTitle = titleEl.innerText.trim();
+      let rawTitle = titleEl.innerText.trim();
 
-        // Unicode tireleri normalize et
-        rawTitle = rawTitle.replace(/[\u2010-\u2015]/g, "-");
+      // Unicode tireleri normalize et - güvenli versiyon
+      rawTitle = rawTitle
+        .replace(/\u2010|\u2011|\u2012|\u2013|\u2014|\u2015/g, "-");
 
-        // Harf-rakam-tire-boşluk dışındaki karakterleri temizle
-        rawTitle = rawTitle.replace(/[^\w\- ]+/g, "");
+      // harf-rakam-tire-boşluk dışını kaldır
+      rawTitle = rawTitle.replace(/[^\w\- ]+/g, "");
 
-        // İlk 3 kelimeyi alıp birleştir → çoğu katalog için yeterli
-        const code = rawTitle
-          .split(/\s+/)
-          .slice(0, 3)
-          .join("")
-          .toUpperCase();
+      // İlk 3 parçayı birleştir
+      const code = rawTitle
+        .split(/\s+/)
+        .slice(0, 3)
+        .join("")
+        .toUpperCase();
 
-        if (!result[code]) {
-          result[code] = { katalog: null, montaj: null, test: null, kesim: null };
-        }
+      if (!result[code]) {
+        result[code] = { katalog: null, montaj: null, test: null, kesim: null };
+      }
 
-        function assignType(obj, url) {
-          const name = url.toLowerCase();
-          if (name.includes("-m-v1.pdf")) { obj.kesim = url; return; }
-          if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) { obj.montaj = url; return; }
-          if (name.includes("test")) { obj.test = url; return; }
-          obj.katalog = url;
-        }
+      function assignType(obj, url) {
+        const name = url.toLowerCase();
+        if (name.includes("-m-v1.pdf")) { obj.kesim = url; return; }
+        if (name.includes("montaj") || name.match(/-\dm-|-[a-z]m-|[-_]m[-_]/)) { obj.montaj = url; return; }
+        if (name.includes("test")) { obj.test = url; return; }
+        obj.katalog = url;
+      }
 
-        if (isLink) {
-          assignType(result[code], "https://asistal.com" + box.getAttribute("href"));
-        } else {
-          box.querySelectorAll("a[href$='.pdf']").forEach(a => {
-            assignType(result[code], "https://asistal.com" + a.getAttribute("href"));
-          });
-        }
-      });
+      if (isLink) {
+        assignType(result[code], "https://asistal.com" + box.getAttribute("href"));
+      } else {
+        box.querySelectorAll("a[href$='.pdf']").forEach(a => {
+          assignType(result[code], "https://asistal.com" + a.getAttribute("href"));
+        });
+      }
+    } catch (e) {
+      console.error("evaluate içinde hata:", e);
+    }
+  });
 
-      return result;
-    });
+  return result;
+});
 
     await browser.close();
 
