@@ -91,18 +91,18 @@ export default async function handler(req, res) {
     }
 
     // --- katalog089 özel düzeltmesi ---
-    if (finalData["katalog089"]) {
-      finalData["katalog089"].katalog =
-        "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
-    }
+if (finalData["katalog089"]) {
+  finalData["katalog089"].katalog =
+    "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
+}
 
-    // --- TH62HV otomatik eşleştirme ---
-    for (const id in finalData) {
-      const normalized = finalData[id].title.replace(/\s+/g, "").toUpperCase();
-      if (normalized === "TH62HV") {
-        finalData["katalog092"] = finalData[id];
-      }
-    }
+// --- TH62HV otomatik eşleştirme ---
+for (const id in finalData) {
+  const normalized = finalData[id].title.replace(/\s+/g, "").toUpperCase();
+  if (normalized === "TH62HV") {
+    finalData["katalog092"] = finalData[id];
+  }
+}
     
     res.status(200).json(finalData);
 
