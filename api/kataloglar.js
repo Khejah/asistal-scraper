@@ -1,4 +1,4 @@
-import chromium from "@sparticuz/chromium";
+dimport chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
 export default async function handler(req, res) {
@@ -96,6 +96,14 @@ export default async function handler(req, res) {
         "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
     }
 
+    // --- TH62HV otomatik eşleştirme ---
+    for (const id in finalData) {
+      const normalized = finalData[id].title.replace(/\s+/g, "").toUpperCase();
+      if (normalized === "TH62HV") {
+        finalData["katalog092"] = finalData[id];
+      }
+    }
+    
     res.status(200).json(finalData);
 
   } catch (err) {
