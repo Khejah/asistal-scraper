@@ -229,7 +229,7 @@ export default async function handler(req, res) {
    --------------------------------------------------- */
    const corporateStatic = {
      IATF: [
-       "https://asistal.com/storage/certificates/zZ9PHQ7hONoOl4ia8sBm.pdf"
+       "https://asistal.com/storage/certificates/May2025/zZ9PHQ7hONoOl4ia8sBm.pdf"
      ],
    
      ISO: [
