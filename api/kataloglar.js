@@ -233,29 +233,29 @@ export default async function handler(req, res) {
      ],
    
      ISO: [
-       "https://asistal.com/storage/certificates/zYK0j5fYzEIh7fcgx0Yn.pdf", // ISO 9001
-       "https://asistal.com/storage/certificates/l1YH2lC2eYWEcLqZX1qy.pdf", // ISO 14001
-       "https://asistal.com/storage/certificates/EQ7ta0vHbmls6B9CpyMT.pdf", // ISO 45001
-       "https://asistal.com/storage/certificates/qzvW6vuXTGgPG3sWHFgB.pdf"  // ISO 50001
+       "https://asistal.com/storage/certificates/July2025/zYK0j5fYzEIh7fcgx0Yn.pdf", // ISO 9001
+       "https://asistal.com/storage/certificates/July2025/l1YH2lC2eYWEcLqZX1qy.pdf", // ISO 14001
+       "https://asistal.com/storage/certificates/July2025/EQ7ta0vHbmls6B9CpyMT.pdf", // ISO 45001
+       "https://asistal.com/storage/certificates/December2024/qzvW6vuXTGgPG3sWHFgB.pdf"  // ISO 50001
      ],
    
      CE: [
-       "https://asistal.com/storage/certificates/wy0whmvRQLtZevgNiqvV.pdf", // EN 15088 CRP
-       "https://asistal.com/storage/certificates/QrRkDaRJD4k1PfekVwag.pdf"  // TR 15088 CPR
+       "https://asistal.com/storage/certificates/December2023/wy0whmvRQLtZevgNiqvV.pdf", // EN 15088 CRP
+       "https://asistal.com/storage/certificates/December2023/QrRkDaRJD4k1PfekVwag.pdf"  // TR 15088 CPR
      ],
    
      QUALANOD: [
-       "https://asistal.com/storage/certificates/yauRVx9pvR7q0JrmC1Jj.pdf"
+       "https://asistal.com/storage/certificates/July2025/yauRVx9pvR7q0JrmC1Jj.pdf"
      ],
    
      QUALICOAT: [
-       "https://asistal.com/storage/certificates/QyBlABvWJlZHUja6bw58.pdf"
+       "https://asistal.com/storage/certificates/July2025/QyBlABvWJlZHUja6bw58.pdf"
      ],
    
      TS: [
-       "https://asistal.com/storage/certificates/VhqswH6Bdv1gPNxLsMbI.pdf", // TS EN 12020
-       "https://asistal.com/storage/certificates/557EuA0gSOAg3ratxfHz.pdf", // TS 4922
-       "https://asistal.com/storage/certificates/31t4j1AM47CIBbrt2v3G.pdf"  // TS EN 755
+       "https://asistal.com/storage/certificates/November2025/VhqswH6Bdv1gPNxLsMbI.pdf", // TS EN 12020
+       "https://asistal.com/storage/certificates/August2025/557EuA0gSOAg3ratxfHz.pdf", // TS 4922
+       "https://asistal.com/storage/certificates/December2025/31t4j1AM47CIBbrt2v3G.pdf"  // TS EN 755
      ],
    
      ASİSTAL: [
