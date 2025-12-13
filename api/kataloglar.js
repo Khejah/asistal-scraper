@@ -120,6 +120,90 @@ export default async function handler(req, res) {
 
       return result;
     });
+	
+	/* ---------------------------------------------------
+	   PROFİL / KATEGORİ KATALOGLARI (KONTROLLÜ)
+	--------------------------------------------------- */
+	const profileData = await page.evaluate(() => {
+	  const map = {
+		STANDART: ["standart"],
+		AL: ["aldoks", "aluminyum", "al"],
+		TUBA: ["tuba"],
+		İZMİR: ["izmir"],
+		DENİZLİK: ["denizlik"],
+		DUŞAKABİN: ["dusakabin"],
+		GRİYAJ: ["griyaj"],
+		GÜNEŞ: ["gunes"],
+		PANJUR: ["panjur"],
+		LAMBİRİ: ["lambri"],
+		MENFEZ: ["menfez"],
+		STOR: ["stor"],
+		SİNEKLİK: ["sineklik"],
+		TIR: ["tir"],
+		KLİPSLİ: ["klipsli"],
+		DAMLALIK: ["damlalik", "esik"],
+		PERVAZ: ["pervaz"],
+		KOMPOZİT: ["kompozit", "polikarbon"],
+		MOBİLYA: ["mobilya"],
+		ÖZEL: ["ozel"],
+		KÜPEŞTE: ["kupeste"],
+		PLİSE: ["plise"],
+		SÜPÜRGELİK: ["supurgelik"],
+		COTTA: ["cotta"],
+		ECORAIL: ["ecorail"]
+	  };
+
+	  const result = {};
+
+	  function push(code, url) {
+		if (!result[code]) result[code] = [];
+		result[code].push(url);
+	  }
+
+	  document.querySelectorAll("a[href$='.pdf']").forEach(a => {
+		const href = a.getAttribute("href");
+		if (!href) return;
+
+		const url = "https://asistal.com" + href;
+		const lower = url.toLowerCase();
+
+		if (
+		  lower.includes("/storage/profiles/") ||
+		  lower.includes("/storage/brochures/")
+		) {
+		  for (const code in map) {
+			if (map[code].some(key => lower.includes(key))) {
+			  push(code, url);
+			  break;
+			}
+		  }
+		}
+	  });
+
+	  return result;
+	});
+	
+	/* ---------------------------------------------------
+	   PROFİL VERİSİNİ RAWDATA'YA MERGE ET
+	--------------------------------------------------- */
+	for (const code of Object.keys(profileData)) {
+	  if (!rawData[code]) {
+		rawData[code] = {
+		  katalog: null,
+		  montaj: null,
+		  kesim: null,
+		  test: null,
+		  documents: []
+		};
+	  }
+
+	  profileData[code].forEach(url => {
+		// Aynı PDF iki kez eklenmesin
+		if (!rawData[code].documents.includes(url)) {
+		  rawData[code].documents.push(url);
+		}
+	  });
+	}
 
     await browser.close();
 
