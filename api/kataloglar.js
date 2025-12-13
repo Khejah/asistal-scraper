@@ -157,7 +157,6 @@ export default async function handler(req, res) {
 		  SÜPÜRGELİK: ["supurgelik"],
 		  COTTA: ["cotta"]
 		};
-	 
 	  const result = {};
 	
 	  function push(code, url) {
@@ -192,6 +191,51 @@ export default async function handler(req, res) {
 	  return result;
 	});
 
+    /* ---------------------------------------------------
+	   KURUMSAL / SERTİFİKA PDF’LERİ
+	--------------------------------------------------- */
+	const corporateData = await page.evaluate(() => {
+	  const map = {
+	    IATF: ["iatf"],
+	    ISO: ["iso"],
+	    CE: ["ce"],
+	    QUALANOD: ["qualanod"],
+	    QUALICOAT: ["qualicoat"],
+	    TS: ["ts-"],
+	    ASİSTAL: ["asistal"]
+	  };
+	
+	  const result = {};
+	
+	  function push(code, url) {
+	    if (!result[code]) result[code] = [];
+	    result[code].push(url);
+	  }
+	
+	  document.querySelectorAll("a[href$='.pdf']").forEach(a => {
+	    const href = a.getAttribute("href");
+	    if (!href) return;
+	
+	    const url = "https://asistal.com" + href;
+	    const lower = url.toLowerCase();
+	
+	    // SADECE sertifika / rapor / brosur
+	    if (
+	      lower.includes("/storage/certificates/") ||
+	      lower.includes("/storage/reports/") ||
+	      lower.includes("/storage/brochures/")
+	    ) {
+	      for (const code in map) {
+	        if (map[code].some(k => lower.includes(k))) {
+	          push(code, url);
+	          break;
+	        }
+	      }
+	    }
+	  });
+	
+	  return result;
+	});
 	
 	/* ---------------------------------------------------
 	   PROFİL VERİSİNİ RAWDATA'YA MERGE ET
@@ -215,6 +259,24 @@ export default async function handler(req, res) {
 	  });
 	}
 
+	for (const code of Object.keys(corporateData)) {
+	  if (!rawData[code]) {
+	    rawData[code] = {
+	      katalog: null,
+	      montaj: null,
+	      kesim: null,
+	      test: null,
+	      documents: []
+	    };
+	  }
+	
+	  corporateData[code].forEach(url => {
+	    if (!rawData[code].documents.includes(url)) {
+	      rawData[code].documents.push(url);
+	    }
+	  });
+	}
+	  
     await browser.close();
 
     /* ---------------------------------------------------
