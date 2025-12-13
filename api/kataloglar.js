@@ -8,43 +8,33 @@ function inferDocumentType(url) {
   const name = url.toLowerCase();
 
   let score = {
-    katalog: 1, // varsayılan
+    katalog: 1,
     montaj: 0,
     kesim: 0,
     test: 0
   };
 
-  // Montaj sinyalleri
   if (name.includes("montaj")) score.montaj += 3;
   if (name.includes("kurulum")) score.montaj += 3;
-  if (name.includes("assembly")) score.montaj += 3;
   if (name.match(/[-_](m|montaj)[-_]/)) score.montaj += 2;
 
-  // Kesim sinyalleri
   if (name.includes("kesit")) score.kesim += 3;
   if (name.includes("-m-v")) score.kesim += 3;
-  if (name.includes("section")) score.kesim += 2;
 
-  // Test sinyalleri
   if (name.includes("test")) score.test += 3;
-  if (name.includes("performans")) score.test += 2;
 
   let best = "katalog";
   for (const k in score) {
     if (score[k] > score[best]) best = k;
   }
 
-  return {
-    type: best,
-    confidence: Math.min(1, score[best] / 5)
-  };
+  return { type: best, confidence: Math.min(1, score[best] / 5) };
 }
 
 export default async function handler(req, res) {
   try {
     const url = "https://asistal.com/tr/tum-kataloglar";
 
-    // ID MAP
     const idMapUrl =
       "https://raw.githubusercontent.com/Khejah/asistal-scraper/main/id_map.json";
     const idMap = await fetch(idMapUrl).then(r => r.json());
@@ -61,11 +51,10 @@ export default async function handler(req, res) {
     await page.waitForSelector(".viewer-box");
 
     /* ---------------------------------------------------
-       HAM VERİ TOPLAMA (HV + SKY + FC50 KORUNUR)
+       HAM ÜRÜN VERİSİ
     --------------------------------------------------- */
     const rawData = await page.evaluate(() => {
       const result = {};
-      const items = document.querySelectorAll(".viewer-box");
 
       function ensure(code) {
         if (!result[code]) {
@@ -79,274 +68,191 @@ export default async function handler(req, res) {
         }
       }
 
-      items.forEach(box => {
+      document.querySelectorAll(".viewer-box").forEach(box => {
         const titleEl = box.querySelector(".title");
         if (!titleEl) return;
 
-        const rawTitle = titleEl.innerText.trim();
-        const code = rawTitle.split(" ")[0].toUpperCase();
-
+        const code = titleEl.innerText.trim().split(" ")[0].toUpperCase();
         ensure(code);
 
         box.querySelectorAll("a[href$='.pdf']").forEach(a => {
-          const pdfUrl = "https://asistal.com" + a.getAttribute("href");
-          const lower = pdfUrl.toLowerCase();
+          const url = "https://asistal.com" + a.getAttribute("href");
+          const lower = url.toLowerCase();
 
-          // --- FC50N ---
           if (lower.includes("fc50n")) {
             ensure("FC50");
-            result["FC50"].documents.push(pdfUrl);
+            result["FC50"].documents.push(url);
             return;
           }
 
-          // --- FC50SKY ---
           if (lower.includes("fc50-sky")) {
             ensure("FC50SKY");
-            result["FC50SKY"].documents.push(pdfUrl);
+            result["FC50SKY"].documents.push(url);
             return;
           }
 
-          // --- TH62HV ---
           if (lower.includes("th62-hv")) {
             ensure("TH62HV");
-            result["TH62HV"].documents.push(pdfUrl);
+            result["TH62HV"].documents.push(url);
             return;
           }
 
-          // Normal
-          result[code].documents.push(pdfUrl);
+          result[code].documents.push(url);
         });
       });
 
       return result;
     });
-	
-	/* ---------------------------------------------------
-	   PROFİL / KATEGORİ KATALOGLARI (KONTROLLÜ)
-	--------------------------------------------------- */
-	const profileData = await page.evaluate(() => {
-	  const map = {
-		  STANDART: ["standart-profiller"],
-		  
-		  // 🔴 ÖZEL ÖNCE
-		  ECORAIL: ["ecorail-kupeste"],
-		  PLİSE: ["plise-sineklik"],
-		
-		  // 🔵 GENEL SONRA
-		  KÜPEŞTE: ["kupeste-profiller"],
-		  SİNEKLİK: ["sineklik-profilleri"],
-		
-		  ALDOKS: ["aldoks-"],
-		  TUBA: ["tuba-"],
-		  İZMİR: ["izmir-alkan"],
-		  DENİZLİK: ["denizlik-profilleri"],
-		  DUŞAKABİN: ["dusakabin-profilleri"],
-		  GRİYAJ: ["griyaj-profilleri"],
-		  GÜNEŞ: ["gunes-kirici"],
-		  PANJUR: ["panjur-profilleri"],
-		  LAMBİRİ: ["lambri-profilleri"],
-		  MENFEZ: ["menfez-profilleri"],
-		  STOR: ["stor-perde"],
-		  TIR: ["tir-profilleri"],
-		  KLİPSLİ: ["klipsli"],
-		  DAMLALIK: ["damlalik"],
-		  PERVAZ: ["pervaz-profilleri"],
-		  KOMPOZİT: ["kompozit"],
-		  MOBİLYA: ["mobilya-profilleri"],
-		  ÖZEL: ["ozel-profiller"],
-		  SÜPÜRGELİK: ["supurgelik"],
-		  COTTA: ["cotta"]
-		};
-	  const result = {};
-	
-	  function push(code, url) {
-	    if (!result[code]) result[code] = [];
-	    result[code].push(url);
-	  }
-	
-	  document.querySelectorAll("a[href$='.pdf']").forEach(a => {
-	    const href = a.getAttribute("href");
-	    if (!href) return;
-	
-	    const url = "https://asistal.com" + href;
-	    const lower = url.toLowerCase();
-	
-	    if (
-	      lower.includes("/storage/profiles/") ||
-	      lower.includes("/storage/brochures/")
-	    ) {
-	      for (const code in map) {
-
-			if (lower.includes("plise-sineklik") && code === "SİNEKLİK") {
-			  continue;
-			}
-			
-			if (map[code].some(key => lower.includes(key))) {
-			  push(code, url);
-			  break;
-			}
-		  }
-	    }
-	  });	
-	  return result;
-	});
 
     /* ---------------------------------------------------
-	   KURUMSAL / SERTİFİKA PDF’LERİ
-	--------------------------------------------------- */
-	const corporateData = await page.evaluate(() => {
-	  const map = {
-	    IATF: ["iatf"],
-	    ISO: ["iso"],
-	    CE: ["ce"],
-	    QUALANOD: ["qualanod"],
-	    QUALICOAT: ["qualicoat"],
-	    TS: ["ts-"],
-	    ASİSTAL: ["asistal"]
-	  };
-	
-	  const result = {};
-	
-	  function push(code, url) {
-	    if (!result[code]) result[code] = [];
-	    result[code].push(url);
-	  }
-	
-	  document.querySelectorAll("a[href$='.pdf']").forEach(a => {
-	    const href = a.getAttribute("href");
-	    if (!href) return;
-	
-	    const url = "https://asistal.com" + href;
-	    const lower = url.toLowerCase();
-	
-	    // SADECE sertifika / rapor / brosur
-	    if (
-	      lower.includes("/storage/certificates/") ||
-	      lower.includes("/storage/reports/") ||
-	      lower.includes("/storage/brochures/")
-	    ) {
-	      for (const code in map) {
-	        if (map[code].some(k => lower.includes(k))) {
-	          push(code, url);
-	          break;
-	        }
-	      }
-	    }
-	  });
-	
-	  return result;
-	});
-	
-	/* ---------------------------------------------------
-	   PROFİL VERİSİNİ RAWDATA'YA MERGE ET
-	--------------------------------------------------- */
-	for (const code of Object.keys(profileData)) {
-	  if (!rawData[code]) {
-		rawData[code] = {
-		  katalog: null,
-		  montaj: null,
-		  kesim: null,
-		  test: null,
-		  documents: []
-		};
-	  }
-
-	  profileData[code].forEach(url => {
-		// Aynı PDF iki kez eklenmesin
-		if (!rawData[code].documents.includes(url)) {
-		  rawData[code].documents.push(url);
-		}
-	  });
-	}
-
-	for (const code of Object.keys(corporateData)) {
-	  if (!rawData[code]) {
-	    rawData[code] = {
-	      katalog: null,
-	      montaj: null,
-	      kesim: null,
-	      test: null,
-	      documents: []
-	    };
-	  }
-	
-	  corporateData[code].forEach(url => {
-	    if (!rawData[code].documents.includes(url)) {
-	      rawData[code].documents.push(url);
-	    }
-	  });
-	}
-	  
-    await browser.close();
-
-    /* ---------------------------------------------------
-       SON JSON OLUŞTURMA (id_map + documents)
+       PROFİL / KATEGORİ KATALOGLARI
     --------------------------------------------------- */
-    const finalData = {};
+    const profileData = await page.evaluate(() => {
+      const map = {
+        STANDART: ["standart-profiller"],
+        ECORAIL: ["ecorail-kupeste"],
+        PLİSE: ["plise-sineklik"],
+        KÜPEŞTE: ["kupeste-profiller"],
+        SİNEKLİK: ["sineklik-profilleri"],
+        ALDOKS: ["aldoks-"],
+        TUBA: ["tuba-"],
+        İZMİR: ["izmir-alkan"],
+        DENİZLİK: ["denizlik-profilleri"],
+        DUŞAKABİN: ["dusakabin-profilleri"],
+        GRİYAJ: ["griyaj-profilleri"],
+        GÜNEŞ: ["gunes-kirici"],
+        PANJUR: ["panjur-profilleri"],
+        LAMBİRİ: ["lambri-profilleri"],
+        MENFEZ: ["menfez-profilleri"],
+        STOR: ["stor-perde"],
+        TIR: ["tir-profilleri"],
+        KLİPSLİ: ["klipsli"],
+        DAMLALIK: ["damlalik"],
+        PERVAZ: ["pervaz-profilleri"],
+        KOMPOZİT: ["kompozit"],
+        MOBİLYA: ["mobilya-profilleri"],
+        ÖZEL: ["ozel-profiller"],
+        SÜPÜRGELİK: ["supurgelik"],
+        COTTA: ["cotta"]
+      };
 
-    for (const code of Object.keys(rawData)) {
-      if (!idMap[code]) continue;
+      const result = {};
 
-      const id = idMap[code];
-      const entry = rawData[code];
-      const documents = [];
+      function push(code, url) {
+        if (!result[code]) result[code] = [];
+        result[code].push(url);
+      }
 
-      entry.documents.forEach(url => {
-        const inferred = inferDocumentType(url);
+      document.querySelectorAll("a[href$='.pdf']").forEach(a => {
+        const url = "https://asistal.com" + a.getAttribute("href");
+        const lower = url.toLowerCase();
 
-        documents.push({
-          type: inferred.type,
-          confidence: inferred.confidence,
-          url
-        });
-
-        // GERİYE UYUMLU alanlar
-        if (!entry[inferred.type]) {
-          entry[inferred.type] = url;
+        if (
+          lower.includes("/storage/profiles/") ||
+          lower.includes("/storage/brochures/")
+        ) {
+          for (const code in map) {
+            if (lower.includes("plise-sineklik") && code === "SİNEKLİK") continue;
+            if (map[code].some(k => lower.includes(k))) {
+              push(code, url);
+              break;
+            }
+          }
         }
       });
 
-      finalData[id] = {
-        id,
+      return result;
+    });
+
+    /* ---------------------------------------------------
+       RAWDATA MERGE
+    --------------------------------------------------- */
+    for (const code in profileData) {
+      rawData[code] ??= { katalog: null, montaj: null, kesim: null, test: null, documents: [] };
+      profileData[code].forEach(u => {
+        if (!rawData[code].documents.includes(u)) rawData[code].documents.push(u);
+      });
+    }
+
+    /* ---------------------------------------------------
+       SABİT PDF EŞLEŞTİRME (KALİTE / TEST / AR)
+    --------------------------------------------------- */
+    const fixedDocuments = {
+      IATF: ["zZ9PHQ7hONoOl4ia8sBm.pdf"],
+      ISO: [
+        "zYK0j5fYzEIh7fcgx0Yn.pdf",
+        "l1YH2lC2eYWEcLqZX1qy.pdf",
+        "EQ7ta0vHbmls6B9CpyMT.pdf",
+        "qzvW6vuXTGgPG3sWHFgB.pdf"
+      ],
+      CE: [
+        "wy0whmvRQLtZevgNiqvV.pdf",
+        "QrRkDaRJD4k1PfekVwag.pdf"
+      ],
+      QUALANOD: ["yauRVx9pvR7q0JrmC1Jj.pdf"],
+      QUALICOAT: ["QyBlABvWJlZHUja6bw58.pdf"],
+      TS: [
+        "VhqswH6Bdv1gPNxLsMbI.pdf",
+        "557EuA0gSOAg3ratxfHz.pdf",
+        "31t4j1AM47CIBbrt2v3G.pdf"
+      ],
+      TS_TEST: [
+        "0IL9bJMbYbawkg2RJMEX.pdf",
+        "ZWOsC09thj7M2zuoWa04.pdf",
+        "lQ6OZtpi9gg4t32zMkwx.pdf",
+        "yT71CDXq3wEskg8YCp1Q.pdf",
+        "KSGMUcZALOCGHwGLXhF4.pdf",
+        "Rk8vOkhCWmaRetlAmEYK.pdf",
+        "gJjSBcbg9vQXdRUC4LK9.pdf"
+      ],
+      ASİSTAL: ["asistal-ar.pdf"]
+    };
+
+    for (const key in fixedDocuments) {
+      const code = key === "TS_TEST" ? "TS" : key;
+      rawData[code] ??= { katalog: null, montaj: null, kesim: null, test: null, documents: [] };
+
+      fixedDocuments[key].forEach(file => {
+        const found = Object.values(rawData)
+          .flatMap(e => e.documents)
+          .find(u => u.endsWith(file));
+
+        if (found && !rawData[code].documents.includes(found)) {
+          rawData[code].documents.push(found);
+          if (key === "TS_TEST") rawData[code].test ??= found;
+          else rawData[code].katalog ??= found;
+        }
+      });
+    }
+
+    await browser.close();
+
+    /* ---------------------------------------------------
+       SON JSON
+    --------------------------------------------------- */
+    const finalData = {};
+
+    for (const code in rawData) {
+      if (!idMap[code]) continue;
+
+      const entry = rawData[code];
+      const docs = [];
+
+      entry.documents.forEach(url => {
+        const inf = inferDocumentType(url);
+        docs.push({ type: inf.type, confidence: inf.confidence, url });
+        entry[inf.type] ??= url;
+      });
+
+      finalData[idMap[code]] = {
+        id: idMap[code],
         title: code,
         katalog: entry.katalog,
         montaj: entry.montaj,
         kesim: entry.kesim,
         test: entry.test,
-        documents
+        documents: docs
       };
-    }
-
-    /* ---------------------------------------------------
-       ÖZEL OVERRIDE’LAR (ESKİ DAVRANIŞ AYNEN KORUNUR)
-    --------------------------------------------------- */
-
-    // P55
-    if (finalData["katalog058"]) {
-      finalData["katalog058"].katalog =
-        "https://www.asistal.com/storage/products/media/1977/p55-2024-v1.pdf";
-      finalData["katalog058"].kesim =
-        "https://www.asistal.com/storage/products/media/1984/p55-2024-m-v1.pdf";
-    }
-
-    // TH62 ana katalog
-    for (const id in finalData) {
-      if (finalData[id].title === "TH62") {
-        finalData[id].katalog =
-          "https://www.asistal.com/storage/products/media/4148/th62-ths62-2025-v3.pdf";
-      }
-    }
-
-    // FC50 katalog override
-    if (finalData["katalog035"]) {
-      finalData["katalog035"].katalog =
-        "https://asistal.com/storage/products/media/4120/fc50n-2025-v2.pdf";
-    }
-
-    // GENEL BROŞÜR
-    if (finalData["katalog089"]) {
-      finalData["katalog089"].katalog =
-        "https://asistal.com/storage/brochures/media/272/asistal-genel-brosur.pdf";
     }
 
     res.status(200).json(finalData);
