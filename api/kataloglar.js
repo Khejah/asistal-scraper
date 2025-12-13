@@ -127,7 +127,7 @@ export default async function handler(req, res) {
 	const profileData = await page.evaluate(() => {
 	  const map = {
 	    STANDART: ["standart-profiller"],
-	    AL: ["aldoks"],
+	    ALDOKS: ["aldoks"],
 	    TUBA: ["tuba-profilleri"],
 	    İZMİR: ["izmir-alkan"],
 	    DENİZLİK: ["denizlik-profilleri"],
@@ -147,7 +147,7 @@ export default async function handler(req, res) {
 	    MOBİLYA: ["mobilya-profilleri"],
 	    ÖZEL: ["ozel-profiller"],
 	    KÜPEŞTE: ["kupeste-profiller"],
-	    PLİSE: ["plise"],
+	    PLİSE: ["plise-sineklik-profilleri"],
 	    SÜPÜRGELİK: ["supurgelik"],
 	    COTTA: ["cotta"],
 	    ECORAIL: ["ecorail"]
