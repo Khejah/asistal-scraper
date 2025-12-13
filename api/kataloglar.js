@@ -40,6 +40,42 @@ export default async function handler(req, res) {
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: "networkidle0" });
 
+     /* ---------------------------------------------------
+		   SERTİFİKALAR (AYRI, TEMİZ, KONTROLLÜ)
+		--------------------------------------------------- */
+		const certificateData = await page.evaluate(() => {
+		  const result = {};
+		
+		  function push(code, url) {
+		    if (!result[code]) result[code] = [];
+		    result[code].push(url);
+		  }
+		
+		  document.querySelectorAll("a[href$='.pdf']").forEach(a => {
+		    const href = a.getAttribute("href");
+		    if (!href) return;
+		
+		    const url = "https://asistal.com" + href;
+		    const lower = url.toLowerCase();
+		
+		    // SADECE sertifika alanları
+		    if (
+		      lower.includes("/storage/certificates/") ||
+		      lower.includes("/storage/reports/")
+		    ) {
+		      if (lower.includes("iatf")) push("IATF", url);
+		      else if (lower.includes("iso")) push("ISO", url);
+		      else if (lower.includes("ce")) push("CE", url);
+		      else if (lower.includes("qualanod")) push("QUALANOD", url);
+		      else if (lower.includes("qualicoat")) push("QUALICOAT", url);
+		      else if (lower.includes("ts")) push("TS", url);
+		      else if (lower.includes("asistal")) push("ASİSTAL", url);
+		    }
+		  });
+		
+		  return result;
+		});
+
     /* -------------------------------------------
        TÜM PDF’LERİ TOPLA
     ------------------------------------------- */
@@ -67,6 +103,25 @@ export default async function handler(req, res) {
       }
     }
 
+	  /* ---------------------------------------------------
+		   SERTİFİKALARI RAW DATA'YA EKLE
+		--------------------------------------------------- */
+		for (const code of Object.keys(certificateData)) {
+		  if (!rawData[code]) {
+		    rawData[code] = {
+		      katalog: null,
+		      montaj: null,
+		      kesim: null,
+		      test: null,
+		      documents: []
+		    };
+		  }
+		
+		  certificateData[code].forEach(url => {
+		    rawData[code].documents.push(url);
+		  });
+		}
+	
     /* -------------------------------------------
        PDF’LERİ CODE’A BAĞLA
     ------------------------------------------- */
