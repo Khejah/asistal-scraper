@@ -224,8 +224,63 @@ export default async function handler(req, res) {
         }
       });
     }
-
-    await browser.close();
+     /* ---------------------------------------------------
+      KURUMSAL / KALİTE / TEST PDF’LERİ (SABİT – DOĞRU YOLLAR)
+   --------------------------------------------------- */
+   const corporateStatic = {
+     IATF: [
+       "https://asistal.com/storage/certificates/zZ9PHQ7hONoOl4ia8sBm.pdf"
+     ],
+   
+     ISO: [
+       "https://asistal.com/storage/certificates/zYK0j5fYzEIh7fcgx0Yn.pdf", // ISO 9001
+       "https://asistal.com/storage/certificates/l1YH2lC2eYWEcLqZX1qy.pdf", // ISO 14001
+       "https://asistal.com/storage/certificates/EQ7ta0vHbmls6B9CpyMT.pdf", // ISO 45001
+       "https://asistal.com/storage/certificates/qzvW6vuXTGgPG3sWHFgB.pdf"  // ISO 50001
+     ],
+   
+     CE: [
+       "https://asistal.com/storage/certificates/wy0whmvRQLtZevgNiqvV.pdf", // EN 15088 CRP
+       "https://asistal.com/storage/certificates/QrRkDaRJD4k1PfekVwag.pdf"  // TR 15088 CPR
+     ],
+   
+     QUALANOD: [
+       "https://asistal.com/storage/certificates/yauRVx9pvR7q0JrmC1Jj.pdf"
+     ],
+   
+     QUALICOAT: [
+       "https://asistal.com/storage/certificates/QyBlABvWJlZHUja6bw58.pdf"
+     ],
+   
+     TS: [
+       "https://asistal.com/storage/certificates/VhqswH6Bdv1gPNxLsMbI.pdf", // TS EN 12020
+       "https://asistal.com/storage/certificates/557EuA0gSOAg3ratxfHz.pdf", // TS 4922
+       "https://asistal.com/storage/certificates/31t4j1AM47CIBbrt2v3G.pdf"  // TS EN 755
+     ],
+   
+     ASİSTAL: [
+       "https://asistal.com/storage/blocks/media/228/asistal-ar.pdf"
+     ]
+   };
+   
+   for (const code in corporateStatic) {
+     if (!rawData[code]) {
+       rawData[code] = {
+         katalog: null,
+         montaj: null,
+         kesim: null,
+         test: null,
+         documents: []
+       };
+     }
+   
+     corporateStatic[code].forEach(url => {
+       if (!rawData[code].documents.includes(url)) {
+         rawData[code].documents.push(url);
+       }
+     });
+   }
+   await browser.close();
 
     /* ---------------------------------------------------
        SON JSON
