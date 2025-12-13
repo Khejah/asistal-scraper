@@ -150,7 +150,7 @@ export default async function handler(req, res) {
 	    PLİSE: ["plise-sineklik-profilleri"],
 	    SÜPÜRGELİK: ["supurgelik"],
 	    COTTA: ["cotta"],
-	    ECORAIL: ["ecorail"]
+	    ECORAIL: ["ecorail-kupeste-profiller"]
 	  };
 	
 	  const result = {};
