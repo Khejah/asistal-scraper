@@ -127,8 +127,8 @@ export default async function handler(req, res) {
 	const profileData = await page.evaluate(() => {
 	  const map = {
 	    STANDART: ["standart-profiller"],
-	    ALDOKS: ["aldoks"],
-	    TUBA: ["tuba-profilleri"],
+	    ALDOKS: ["aldoks-"],
+	    TUBA: ["tuba-"],
 	    İZMİR: ["izmir-alkan"],
 	    DENİZLİK: ["denizlik-profilleri"],
 	    DUŞAKABİN: ["dusakabin-profilleri"],
@@ -138,7 +138,7 @@ export default async function handler(req, res) {
 	    LAMBİRİ: ["lambri-profilleri"],
 	    MENFEZ: ["menfez-profilleri"],
 	    STOR: ["stor-perde"],
-	    SİNEKLİK: ["sineklik-profilleri"],
+	    SİNEKLİK: ["sineklik-"],
 	    TIR: ["tir-profilleri"],
 	    KLİPSLİ: ["klipsli"],
 	    DAMLALIK: ["damlalik"],
@@ -147,10 +147,10 @@ export default async function handler(req, res) {
 	    MOBİLYA: ["mobilya-profilleri"],
 	    ÖZEL: ["ozel-profiller"],
 	    KÜPEŞTE: ["kupeste-profiller"],
-	    PLİSE: ["plise-sineklik-profilleri"],
+	    PLİSE: ["plise-"],
 	    SÜPÜRGELİK: ["supurgelik"],
 	    COTTA: ["cotta"],
-	    ECORAIL: ["ecorail-kupeste-profiller"]
+	    ECORAIL: ["ecorail-"]
 	  };
 	
 	  const result = {};
