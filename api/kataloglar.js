@@ -126,62 +126,63 @@ export default async function handler(req, res) {
 	--------------------------------------------------- */
 	const profileData = await page.evaluate(() => {
 	  const map = {
-		STANDART: ["standart"],
-		AL: ["aldoks", "aluminyum", "al"],
-		TUBA: ["tuba"],
-		İZMİR: ["izmir"],
-		DENİZLİK: ["denizlik"],
-		DUŞAKABİN: ["dusakabin"],
-		GRİYAJ: ["griyaj"],
-		GÜNEŞ: ["gunes"],
-		PANJUR: ["panjur"],
-		LAMBİRİ: ["lambri"],
-		MENFEZ: ["menfez"],
-		STOR: ["stor"],
-		SİNEKLİK: ["sineklik"],
-		TIR: ["tir"],
-		KLİPSLİ: ["klipsli"],
-		DAMLALIK: ["damlalik", "esik"],
-		PERVAZ: ["pervaz"],
-		KOMPOZİT: ["kompozit", "polikarbon"],
-		MOBİLYA: ["mobilya"],
-		ÖZEL: ["ozel"],
-		KÜPEŞTE: ["kupeste"],
-		PLİSE: ["plise"],
-		SÜPÜRGELİK: ["supurgelik"],
-		COTTA: ["cotta"],
-		ECORAIL: ["ecorail"]
+	    STANDART: ["standart-profiller"],
+	    AL: ["aldoks"],
+	    TUBA: ["tuba-profilleri"],
+	    İZMİR: ["izmir-alkan"],
+	    DENİZLİK: ["denizlik-profilleri"],
+	    DUŞAKABİN: ["dusakabin-profilleri"],
+	    GRİYAJ: ["griyaj-profilleri"],
+	    GÜNEŞ: ["gunes-kirici"],
+	    PANJUR: ["panjur-profilleri"],
+	    LAMBİRİ: ["lambri-profilleri"],
+	    MENFEZ: ["menfez-profilleri"],
+	    STOR: ["stor-perde"],
+	    SİNEKLİK: ["sineklik-profilleri"],
+	    TIR: ["tir-profilleri"],
+	    KLİPSLİ: ["klipsli"],
+	    DAMLALIK: ["damlalik"],
+	    PERVAZ: ["pervaz-profilleri"],
+	    KOMPOZİT: ["kompozit"],
+	    MOBİLYA: ["mobilya-profilleri"],
+	    ÖZEL: ["ozel-profiller"],
+	    KÜPEŞTE: ["kupeste-profiller"],
+	    PLİSE: ["plise"],
+	    SÜPÜRGELİK: ["supurgelik"],
+	    COTTA: ["cotta"],
+	    ECORAIL: ["ecorail"]
 	  };
-
+	
 	  const result = {};
-
+	
 	  function push(code, url) {
-		if (!result[code]) result[code] = [];
-		result[code].push(url);
+	    if (!result[code]) result[code] = [];
+	    result[code].push(url);
 	  }
-
+	
 	  document.querySelectorAll("a[href$='.pdf']").forEach(a => {
-		const href = a.getAttribute("href");
-		if (!href) return;
-
-		const url = "https://asistal.com" + href;
-		const lower = url.toLowerCase();
-
-		if (
-		  lower.includes("/storage/profiles/") ||
-		  lower.includes("/storage/brochures/")
-		) {
-		  for (const code in map) {
-			if (map[code].some(key => lower.includes(key))) {
-			  push(code, url);
-			  break;
-			}
-		  }
-		}
+	    const href = a.getAttribute("href");
+	    if (!href) return;
+	
+	    const url = "https://asistal.com" + href;
+	    const lower = url.toLowerCase();
+	
+	    if (
+	      lower.includes("/storage/profiles/") ||
+	      lower.includes("/storage/brochures/")
+	    ) {
+	      for (const code in map) {
+	        if (map[code].some(key => lower.includes(key))) {
+	          push(code, url);
+	          break; // SADECE 1 profile girsin
+	        }
+	      }
+	    }
 	  });
-
+	
 	  return result;
 	});
+
 	
 	/* ---------------------------------------------------
 	   PROFİL VERİSİNİ RAWDATA'YA MERGE ET
