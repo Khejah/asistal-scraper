@@ -126,33 +126,38 @@ export default async function handler(req, res) {
 	--------------------------------------------------- */
 	const profileData = await page.evaluate(() => {
 	  const map = {
-	    STANDART: ["standart-profiller"],
-	    ALDOKS: ["aldoks-"],
-	    TUBA: ["tuba-"],
-	    İZMİR: ["izmir-alkan"],
-	    DENİZLİK: ["denizlik-profilleri"],
-	    DUŞAKABİN: ["dusakabin-profilleri"],
-	    GRİYAJ: ["griyaj-profilleri"],
-	    GÜNEŞ: ["gunes-kirici"],
-	    PANJUR: ["panjur-profilleri"],
-	    LAMBİRİ: ["lambri-profilleri"],
-	    MENFEZ: ["menfez-profilleri"],
-	    STOR: ["stor-perde"],
-	    SİNEKLİK: ["sineklik-"],
-	    TIR: ["tir-profilleri"],
-	    KLİPSLİ: ["klipsli"],
-	    DAMLALIK: ["damlalik"],
-	    PERVAZ: ["pervaz-profilleri"],
-	    KOMPOZİT: ["kompozit"],
-	    MOBİLYA: ["mobilya-profilleri"],
-	    ÖZEL: ["ozel-profiller"],
-	    KÜPEŞTE: ["kupeste-profiller"],
-	    PLİSE: ["plise-"],
-	    SÜPÜRGELİK: ["supurgelik"],
-	    COTTA: ["cotta"],
-	    ECORAIL: ["ecorail-"]
-	  };
-	
+		  STANDART: ["standart-profiller"],
+		  
+		  // 🔴 ÖZEL ÖNCE
+		  ECORAIL: ["ecorail-kupeste"],
+		  PLİSE: ["plise-sineklik"],
+		
+		  // 🔵 GENEL SONRA
+		  KÜPEŞTE: ["kupeste-profiller"],
+		  SİNEKLİK: ["sineklik-profilleri"],
+		
+		  ALDOKS: ["aldoks-"],
+		  TUBA: ["tuba-"],
+		  İZMİR: ["izmir-alkan"],
+		  DENİZLİK: ["denizlik-profilleri"],
+		  DUŞAKABİN: ["dusakabin-profilleri"],
+		  GRİYAJ: ["griyaj-profilleri"],
+		  GÜNEŞ: ["gunes-kirici"],
+		  PANJUR: ["panjur-profilleri"],
+		  LAMBİRİ: ["lambri-profilleri"],
+		  MENFEZ: ["menfez-profilleri"],
+		  STOR: ["stor-perde"],
+		  TIR: ["tir-profilleri"],
+		  KLİPSLİ: ["klipsli"],
+		  DAMLALIK: ["damlalik"],
+		  PERVAZ: ["pervaz-profilleri"],
+		  KOMPOZİT: ["kompozit"],
+		  MOBİLYA: ["mobilya-profilleri"],
+		  ÖZEL: ["ozel-profiller"],
+		  SÜPÜRGELİK: ["supurgelik"],
+		  COTTA: ["cotta"]
+		};
+	 
 	  const result = {};
 	
 	  function push(code, url) {
@@ -172,14 +177,18 @@ export default async function handler(req, res) {
 	      lower.includes("/storage/brochures/")
 	    ) {
 	      for (const code in map) {
-	        if (map[code].some(key => lower.includes(key))) {
-	          push(code, url);
-	          break; // SADECE 1 profile girsin
-	        }
-	      }
+
+			if (lower.includes("plise-sineklik") && code === "SİNEKLİK") {
+			  continue;
+			}
+			
+			if (map[code].some(key => lower.includes(key))) {
+			  push(code, url);
+			  break;
+			}
+		  }
 	    }
-	  });
-	
+	  });	
 	  return result;
 	});
 
