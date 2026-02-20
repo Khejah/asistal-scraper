@@ -1,5 +1,6 @@
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
+import crypto from "crypto";
 
 /* ---------------------------------------------------
    PDF TÜRÜNÜ İNSAN GİBİ TAHMİN EDEN FONKSİYON
@@ -50,6 +51,37 @@ export default async function handler(req, res) {
     await page.goto(url, { waitUntil: "networkidle0" });
     await page.waitForSelector(".viewer-box");
 
+   /* ---------------------------------------------------
+      SERTİFİKA SCRAPER + MANIFEST HASH
+   --------------------------------------------------- */
+   function normalizeText(s) {
+     return (s || "")
+       .toLowerCase()
+       .replaceAll("ı", "i")
+       .replaceAll("İ", "i")
+       .replaceAll("ş", "s")
+       .replaceAll("ğ", "g")
+       .replaceAll("ü", "u")
+       .replaceAll("ö", "o")
+       .replaceAll("ç", "c");
+   }
+   
+   function classifyCert(url, labelText) {
+     const s = normalizeText(url) + " " + normalizeText(labelText);
+   
+     if (s.includes("qualanod")) return "QUALANOD";
+     if (s.includes("qualicoat")) return "QUALICOAT";
+     if (s.includes("iatf")) return "IATF";
+     if (s.includes("iso")) return "ISO";
+     if (s.includes("ce")) return "CE";
+     if (s.includes("ts")) return "TS";
+   
+     return null;
+   }
+   
+   function sha256(text) {
+     return crypto.createHash("sha256").update(text).digest("hex");
+   }
     /* ---------------------------------------------------
        HAM ÜRÜN VERİSİ
     --------------------------------------------------- */
@@ -175,113 +207,52 @@ export default async function handler(req, res) {
     }
 
     /* ---------------------------------------------------
-       SABİT PDF EŞLEŞTİRME (KALİTE / TEST / AR)
-    --------------------------------------------------- */
-    const fixedDocuments = {
-      IATF: ["zZ9PHQ7hONoOl4ia8sBm.pdf"],
-      ISO: [
-        "zYK0j5fYzEIh7fcgx0Yn.pdf",
-        "l1YH2lC2eYWEcLqZX1qy.pdf",
-        "EQ7ta0vHbmls6B9CpyMT.pdf",
-        "qzvW6vuXTGgPG3sWHFgB.pdf"
-      ],
-      CE: [
-        "wy0whmvRQLtZevgNiqvV.pdf",
-        "QrRkDaRJD4k1PfekVwag.pdf"
-      ],
-      QUALANOD: ["irKG4v0O6RtrXyWVPbwq.pdf"],
-      QUALICOAT: ["T25IYHeRR6mFPVZNIBgT.pdf"],
-      TS: [
-        "VhqswH6Bdv1gPNxLsMbI.pdf",
-        "557EuA0gSOAg3ratxfHz.pdf",
-        "31t4j1AM47CIBbrt2v3G.pdf"
-      ],
-      TS_TEST: [
-        "0IL9bJMbYbawkg2RJMEX.pdf",
-        "ZWOsC09thj7M2zuoWa04.pdf",
-        "lQ6OZtpi9gg4t32zMkwx.pdf",
-        "yT71CDXq3wEskg8YCp1Q.pdf",
-        "KSGMUcZALOCGHwGLXhF4.pdf",
-        "Rk8vOkhCWmaRetlAmEYK.pdf",
-        "gJjSBcbg9vQXdRUC4LK9.pdf"
-      ],
-      ASİSTAL: ["asistal-ar.pdf"]
-    };
-
-    for (const key in fixedDocuments) {
-      const code = key === "TS_TEST" ? "TS" : key;
-      rawData[code] ??= { katalog: null, montaj: null, kesim: null, test: null, documents: [] };
-
-      fixedDocuments[key].forEach(file => {
-        const found = Object.values(rawData)
-          .flatMap(e => e.documents)
-          .find(u => u.endsWith(file));
-
-        if (found && !rawData[code].documents.includes(found)) {
-          rawData[code].documents.push(found);
-          if (key === "TS_TEST") rawData[code].test ??= found;
-          else rawData[code].katalog ??= found;
-        }
-      });
-    }
-     /* ---------------------------------------------------
-      KURUMSAL / KALİTE / TEST PDF’LERİ (SABİT – DOĞRU YOLLAR)
+      DİNAMİK SERTİFİKA YAKALAMA
    --------------------------------------------------- */
-   const corporateStatic = {
-     IATF: [
-       "https://asistal.com/storage/certificates/May2025/zZ9PHQ7hONoOl4ia8sBm.pdf"
-     ],
    
-     ISO: [
-       "https://asistal.com/storage/certificates/July2025/zYK0j5fYzEIh7fcgx0Yn.pdf", // ISO 9001
-       "https://asistal.com/storage/certificates/July2025/l1YH2lC2eYWEcLqZX1qy.pdf", // ISO 14001
-       "https://asistal.com/storage/certificates/July2025/EQ7ta0vHbmls6B9CpyMT.pdf", // ISO 45001
-       "https://asistal.com/storage/certificates/December2024/qzvW6vuXTGgPG3sWHFgB.pdf"  // ISO 50001
-     ],
+   const certItems = await page.evaluate(() => {
+     const out = [];
    
-     CE: [
-       "https://asistal.com/storage/certificates/December2023/wy0whmvRQLtZevgNiqvV.pdf", // EN 15088 CRP
-       "https://asistal.com/storage/certificates/December2023/QrRkDaRJD4k1PfekVwag.pdf"  // TR 15088 CPR
-     ],
+     document.querySelectorAll("a[href$='.pdf']").forEach(a => {
+       const href = a.getAttribute("href");
+       if (!href) return;
    
-     QUALANOD: [
-       "https://asistal.com/storage/certificates/January2026/irKG4v0O6RtrXyWVPbwq.pdf"
-     ],
+       const url = href.startsWith("http")
+         ? href
+         : "https://asistal.com" + href;
    
-     QUALICOAT: [
-       "https://asistal.com/storage/certificates/January2026/T25IYHeRR6mFPVZNIBgT.pdf"
-     ],
+       if (!url.toLowerCase().includes("/storage/certificates/")) return;
    
-     TS: [
-       "https://asistal.com/storage/certificates/November2025/VhqswH6Bdv1gPNxLsMbI.pdf", // TS EN 12020
-       "https://asistal.com/storage/certificates/August2025/557EuA0gSOAg3ratxfHz.pdf", // TS 4922
-       "https://asistal.com/storage/certificates/December2025/31t4j1AM47CIBbrt2v3G.pdf"  // TS EN 755
-     ],
-   
-     ASİSTAL: [
-       "https://asistal.com/storage/blocks/media/228/asistal-ar.pdf"
-     ]
-   };
-   
-   for (const code in corporateStatic) {
-     if (!rawData[code]) {
-       rawData[code] = {
-         katalog: null,
-         montaj: null,
-         kesim: null,
-         test: null,
-         documents: []
-       };
-     }
-   
-     corporateStatic[code].forEach(url => {
-       if (!rawData[code].documents.includes(url)) {
-         rawData[code].documents.push(url);
-       }
+       out.push({
+         url,
+         labelText: (a.innerText || "").trim()
+       });
      });
+   
+     return out;
+   });
+   
+   const certificateGroups = {};
+   
+   for (const item of certItems) {
+     const group = classifyCert(item.url, item.labelText);
+     if (!group) continue;
+   
+     certificateGroups[group] ??= [];
+     if (!certificateGroups[group].includes(item.url)) {
+       certificateGroups[group].push(item.url);
+     }
    }
-   await browser.close();
-
+   
+   // HASH ÜRET
+   const flatList = Object.keys(certificateGroups)
+     .sort()
+     .flatMap(k => certificateGroups[k].sort().map(u => k + "|" + u))
+     .join("\n");
+   
+   const certificateManifestHash = sha256(flatList);
+   const certificateVersion = new Date().toISOString().slice(0, 10);
+     
     /* ---------------------------------------------------
        SON JSON
     --------------------------------------------------- */
@@ -310,7 +281,14 @@ export default async function handler(req, res) {
       };
     }
 
-    res.status(200).json(finalData);
+    res.status(200).json({
+     meta: {
+       certificates_version: certificateVersion,
+       certificates_manifest_hash: certificateManifestHash,
+       certificates_groups: certificateGroups
+     },
+     data: finalData
+   });
 
   } catch (err) {
     res.status(500).json({ error: err.toString() });
