@@ -286,7 +286,30 @@ export default async function handler(req, res) {
         documents: docs
       };
     }
-
+     
+    /* ---------------------------------------------------
+      META SERTİFİKALARI DATA'YA ENJEKTE ET
+   --------------------------------------------------- */
+   
+   for (const group in certificateGroups) {
+     const id = idMap[group];
+     if (!id) continue;
+   
+     const firstUrl = certificateGroups[group][0] || null;
+   
+     finalData[id] = {
+       id: id,
+       title: group,
+       katalog: firstUrl,
+       montaj: null,
+       kesim: null,
+       test: null,
+       documents: firstUrl
+         ? [{ type: "katalog", confidence: 1, url: firstUrl }]
+         : []
+     };
+   }
+     
     res.status(200).json({
      meta: {
        certificates_version: certificateVersion,
