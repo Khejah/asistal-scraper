@@ -245,11 +245,11 @@ export default async function handler(req, res) {
      ],
    
      QUALANOD: [
-       "https://asistal.com/storage/certificates/July2025/yauRVx9pvR7q0JrmC1Jj.pdf"
+       "https://asistal.com/storage/certificates/January2026/irKG4v0O6RtrXyWVPbwq.pdf"
      ],
    
      QUALICOAT: [
-       "https://asistal.com/storage/certificates/July2025/QyBlABvWJlZHUja6bw58.pdf"
+       "https://asistal.com/storage/certificates/January2026/T25IYHeRR6mFPVZNIBgT.pdf"
      ],
    
      TS: [
