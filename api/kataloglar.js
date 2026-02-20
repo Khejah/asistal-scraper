@@ -189,8 +189,8 @@ export default async function handler(req, res) {
         "wy0whmvRQLtZevgNiqvV.pdf",
         "QrRkDaRJD4k1PfekVwag.pdf"
       ],
-      QUALANOD: ["yauRVx9pvR7q0JrmC1Jj.pdf"],
-      QUALICOAT: ["QyBlABvWJlZHUja6bw58.pdf"],
+      QUALANOD: ["irKG4v0O6RtrXyWVPbwq.pdf"],
+      QUALICOAT: ["T25IYHeRR6mFPVZNIBgT.pdf"],
       TS: [
         "VhqswH6Bdv1gPNxLsMbI.pdf",
         "557EuA0gSOAg3ratxfHz.pdf",
