@@ -75,6 +75,7 @@ export default async function handler(req, res) {
      if (s.includes("iso")) return "ISO";
      if (s.includes("ce")) return "CE";
      if (s.includes("ts")) return "TS";
+     if (s.includes("asistal")) return "ASİSTAL";
    
      return null;
    }
