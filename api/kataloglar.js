@@ -67,15 +67,21 @@ export default async function handler(req, res) {
    }
    
    function classifyCert(url, labelText) {
-     const s = normalizeText(url) + " " + normalizeText(labelText);
+     const s = normalizeText(url + " " + labelText);
    
      if (s.includes("qualanod")) return "QUALANOD";
      if (s.includes("qualicoat")) return "QUALICOAT";
      if (s.includes("iatf")) return "IATF";
+   
      if (s.includes("iso")) return "ISO";
-     if (s.includes("ce")) return "CE";
-     if (s.includes("ts")) return "TS";
-     if (s.includes("asistal")) return "ASİSTAL";
+   
+     // TS önce kontrol edilmeli
+     if (s.includes("ts en") || s.includes("ts-") || s.includes("ts_")) return "TS";
+   
+     // CE sadece gerçekten CE belgeleri için
+     if (s.includes(" 15088 ") || s.includes("cpr")) return "CE";
+   
+     if (s.includes("asistal-ar")) return "ASİSTAL";
    
      return null;
    }
