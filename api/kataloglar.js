@@ -155,7 +155,6 @@ export default async function handler(req, res) {
         SİNEKLİK: ["sineklik-profilleri"],
         ALDOKS: ["aldoks-"],
         TUBA: ["tuba-"],
-        İZMİR: ["izmir-alkan"],
         DENİZLİK: ["denizlik-profilleri"],
         DUŞAKABİN: ["dusakabin-profilleri"],
         GRİYAJ: ["griyaj-profilleri"],
