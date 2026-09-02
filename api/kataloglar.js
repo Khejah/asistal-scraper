@@ -283,9 +283,68 @@ export default async function handler(req, res) {
 
       entry.documents.forEach(url => {
         const inf = inferDocumentType(url);
-        docs.push({ type: inf.type, confidence: inf.confidence, url });
-        entry[inf.type] ??= url;
+      
+        docs.push({
+          type: inf.type,
+          confidence: inf.confidence,
+          url
+        });
+      
+        if (inf.type !== "katalog") {
+          entry[inf.type] ??= url;
+        }
       });
+      
+      /*
+       * ANA KATALOG SEÇİMİ
+       *
+       * İlk gördüğünü almak yerine,
+       * gerçekten ürünün ana kataloğunu seç.
+       */
+      const katalogCandidates = entry.documents.filter(url => {
+        const inf = inferDocumentType(url);
+        return inf.type === "katalog";
+      });
+      
+      let selectedCatalog = null;
+      
+      /*
+       * FC50 özel durumu:
+       * fc50n-YYYY-vX.pdf ana katalogdur.
+       *
+       * AEV ve AST teknik katalog ana katalog değildir.
+       */
+      if (code === "FC50") {
+      
+        selectedCatalog =
+          katalogCandidates.find(url => {
+            const s = url.toLowerCase();
+      
+            return (
+              s.includes("fc50n-") &&
+              !s.includes("montaj")
+            );
+          }) || null;
+      }
+      
+      /*
+       * Özel seçim yapılmadıysa genel katalog seçimi.
+       */
+      if (!selectedCatalog) {
+      
+        selectedCatalog =
+          katalogCandidates.find(url => {
+            const s = url.toLowerCase();
+      
+            return (
+              !s.includes("-aev") &&
+              !s.includes("-ast-") &&
+              !s.includes("teknik-katalog")
+            );
+          }) || katalogCandidates[0] || null;
+      }
+      
+      entry.katalog = selectedCatalog;
 
       finalData[idMap[code]] = {
         id: idMap[code],
