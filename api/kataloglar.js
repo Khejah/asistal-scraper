@@ -118,6 +118,12 @@ export default async function handler(req, res) {
           const url = "https://asistal.com" + a.getAttribute("href");
           const lower = url.toLowerCase();
 
+          if (
+              lower.includes("/storage/certificates/") ||
+              lower.includes("asistal-ar")
+            ) {
+              return;
+            }
           if (lower.includes("fc50n")) {
             ensure("FC50");
             result["FC50"].documents.push(url);
