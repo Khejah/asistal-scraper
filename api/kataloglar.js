@@ -326,7 +326,22 @@ export default async function handler(req, res) {
             );
           }) || null;
       }
+      /*
+       * FDT80 özel durumu:
+       * fdt80-YYYY-vX.pdf ana katalogdur.
+       */
+      if (code === "FDT80") {
       
+        selectedCatalog =
+          katalogCandidates.find(url => {
+            const fileName = url
+              .toLowerCase()
+              .split("/")
+              .pop() || "";
+      
+            return /^fdt80-\d{4}-v\d+\.pdf$/.test(fileName);
+          }) || null;
+      }
       /*
        * Özel seçim yapılmadıysa genel katalog seçimi.
        */
