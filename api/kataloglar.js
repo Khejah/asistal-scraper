@@ -68,7 +68,8 @@ export default async function handler(req, res) {
    
    function classifyCert(url, labelText) {
      const s = normalizeText(url + " " + labelText);
-   
+      
+     if (s.includes("asistal-ar") || s.includes("asistal-katalog")) return "ASİSTAL";
      if (s.includes("qualanod")) return "QUALANOD";
      if (s.includes("qualicoat")) return "QUALICOAT";
      if (s.includes("iatf")) return "IATF";
@@ -80,8 +81,6 @@ export default async function handler(req, res) {
    
      // CE sadece gerçekten CE belgeleri için
      if (s.includes(" 15088 ") || s.includes("cpr")) return "CE";
-   
-     if (s.includes("asistal-ar")) return "ASİSTAL";
    
      return null;
    }
@@ -121,6 +120,7 @@ export default async function handler(req, res) {
           if (
               lower.includes("/storage/certificates/") ||
               lower.includes("asistal-ar")
+              lower.includes("asistal-katalog")
             ) {
               return;
             }
@@ -238,6 +238,7 @@ export default async function handler(req, res) {
        if (
          !lower.includes("/storage/certificates/") &&
          !lower.includes("asistal-ar")
+         !lower.includes("asistal-katalog")
        ) return;
    
        out.push({
