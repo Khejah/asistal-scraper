@@ -119,7 +119,7 @@ export default async function handler(req, res) {
 
           if (
               lower.includes("/storage/certificates/") ||
-              lower.includes("asistal-ar")
+              lower.includes("asistal-ar") ||
               lower.includes("asistal-katalog")
             ) {
               return;
